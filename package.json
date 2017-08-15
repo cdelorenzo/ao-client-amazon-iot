@@ -1,0 +1,24 @@
+{
+  "name":"ao-client-amazon-iot",
+  "description":"MQTT Websocket Amazon IoT Client Subscriber",
+  "version":"0.1.0",
+  "main":"subscribe.js",
+  "scripts":{
+     "start":"node subscribe.js"
+  },
+  "repository":{
+    "type":"git",
+    "url":"https://github.com/cdelorenzo/ao-client-amazon-iot"
+  },
+  "dependencies":{
+    "aws-iot-device-sdk": "2.0.1",
+    "async":"2.5.0",
+    "minimist": "1.2.0"
+  },
+  "keywords":[
+    "node.js"
+  ],
+  "author":"",
+  "license":"MIT",
+  "readmeFilename":"README.md"
+}
