@@ -3,20 +3,30 @@ var async = require('async');
 var os = require("os");
 var config = require('./config.json');
 
-var hostname = os.hostname();
+var hostname = process.argv[2].split(".", 2);
 
-var subscribe = function(callback) {
+workerID=hostname[0];
+region=hostname[1];
 
+var subscribe = function(subID) {
+
+  return function (callback) {
+
+  var subscriber = workerID + '_' + subID;
   var device = awsIot.device({
     // These items are read in via a configuration file, see readme for usage.
     host: config.host,
-    protocol: config.protocol
+    protocol: config.protocol,
+    caPath: config.caPath,
+    clientId: subscriber + (Math.floor((Math.random() * 100000) + 1))
   });
 
   device
     .on('connect', function() {
-      console.log('connect');
       device.subscribe('test');
+      device.publish('test', JSON.stringify({
+        mode1Process: "Published worked for " + subscriber
+      }));
     });
    device
       .on('close', function() {
@@ -37,41 +47,45 @@ var subscribe = function(callback) {
    device
    .on('message', function(topic, payload) {
      console.log('message', topic, payload.toString());
+  //    console.log(message.message.Date + ' ' + subscriber +
+  // ' ' + message.message['E-Tag'] + ' ' + message.message.Status +
+  // ' ' + diff);
    });
 
-   callback(null,"Connecting and Subscribing");
+    callback(null, subscriber + ' subscribed');
+}
 }
 
 
 if (require.main === module) {
   // Number of connections to run on server.
-  var connections = 10;
+  var connections = config.connections;
   // Number of seconds to ramp up over.
-  var ramp = 6;
+  var ramp = config.ramp;
   // Concurrent connections attempted per second.
   var rate = Math.ceil((connections / ramp) * 100)/100;;
 
-  var count = 0
+  var count = 1;
 
   intervalPerConnection = (1/rate)*1000;
 
-  console.log(intervalPerConnection);
+  console.log((new Date()).toISOString() + ' ' + region + ' ' + "Ramping up " + connections +
+    " connection/s Rate " + rate +
+    " per second over a period of " + ramp + " second/s");
 
   var subscribers = [];
 
   setTimeout(function request() {
     subscribers.length = 0
-    subscribers.push(subscribe);
+    subscribers.push(subscribe(count));
     async.parallel(subscribers, function(err, result){
-      console.log(result)
+      //console.log((new Date()).toISOString() + ' ' + region + ' ' + result )
     });
 
     if(count == connections){
-      console.log("Reached connection count: ", connections);
     }
     else {
       interval = setTimeout(request,intervalPerConnection);
-      console.log(count);
       count++;
     }
   }, intervalPerConnection);
